@@ -3,7 +3,7 @@ require("dotenv").config();
 const connectDB = require("./db/connectDB");
 const Movie = require("./model/Movie");
 
-const jsonMovies = require("./movies_cloudinary.json");
+const jsonMovies = require("./mainMovies.json");
 
 const start = async () => {
   try {

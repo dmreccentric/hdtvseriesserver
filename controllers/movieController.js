@@ -3,19 +3,17 @@ const Movie = require("../model/Movie");
 // Get all movies (with optional filters)
 const getAllMovies = async (req, res) => {
   try {
-    const { genre, limit = 20, search } = req.query;
+    const { genre, search, page = 1, limit = 20 } = req.query;
 
     // Build query object
     let query = {};
 
-    // Handle genre(s)
+    // Filter by genre
     if (genre) {
-      // split by comma, trim, capitalize first letter
       const genresArray = genre
         .split(",")
         .map((g) => g.trim())
         .map((g) => g.charAt(0).toUpperCase() + g.slice(1).toLowerCase());
-
       query.genres = { $in: genresArray };
     }
 
@@ -24,10 +22,21 @@ const getAllMovies = async (req, res) => {
       query.title = { $regex: search, $options: "i" };
     }
 
-    // Execute query
-    const movies = await Movie.find(query).limit(parseInt(limit));
+    const skip = (parseInt(page) - 1) * parseInt(limit);
 
-    res.status(200).json({ movies, nbHits: movies.length });
+    // Execute query with pagination
+    const movies = await Movie.find(query).skip(skip).limit(parseInt(limit));
+
+    // Total documents for pagination info
+    const total = await Movie.countDocuments(query);
+
+    res.status(200).json({
+      movies,
+      total,
+      page: parseInt(page),
+      totalPages: Math.ceil(total / parseInt(limit)),
+      nbHits: movies.length,
+    });
   } catch (error) {
     console.error("getAllMovies error:", error);
     res.status(500).json({ msg: error.message });
@@ -66,6 +75,8 @@ const createMovie = async (req, res) => {
       rating,
       released,
       seasons,
+      status,
+      seasonNumber,
     } = req.body;
 
     // Parse genres
@@ -77,12 +88,11 @@ const createMovie = async (req, res) => {
         parsedGenres = genres.split(",").map((g) => g.trim());
       }
     }
-
     parsedGenres = parsedGenres.map(
       (g) => g.charAt(0).toUpperCase() + g.slice(1).toLowerCase()
     );
 
-    // Parse seasons if provided
+    // Parse seasons/episodes/releases if provided
     let parsedSeasons = undefined;
     if (seasons) {
       try {
@@ -92,14 +102,13 @@ const createMovie = async (req, res) => {
       }
     }
 
-    // In createMovie
     const movieData = {
       title,
       type,
       genres: parsedGenres,
       plot,
-      img: req.files?.img?.[0]?.path || "", // main image
-      himg: req.files?.himg?.[0]?.path || "", // horizontal image
+      img: req.files?.img?.[0]?.path || "",
+      himg: req.files?.himg?.[0]?.path || "",
       createdBy: req.user?.userID || null,
     };
 
@@ -108,12 +117,14 @@ const createMovie = async (req, res) => {
     if (released) movieData.released = Number(released);
     if (language) movieData.language = language;
     if (trailer) movieData.trailer = trailer;
+    if (status) movieData.status = status;
+    if (seasonNumber) movieData.status = seasonNumber;
     if (parsedSeasons) movieData.seasons = parsedSeasons;
 
     const movie = await Movie.create(movieData);
-    res.status(200).json({ movie });
+    res.status(201).json({ movie });
   } catch (error) {
-    console.log("createMovie error:", error);
+    console.error("createMovie error:", error);
     res.status(500).json({ msg: error.message });
   }
 };
@@ -142,15 +153,19 @@ const editMovie = async (req, res) => {
       }
     }
 
-    // Parse seasons
+    // Parse seasons/episodes/releases
     if (updates.seasons) {
       try {
         updates.seasons = JSON.parse(updates.seasons);
-      } catch {}
+      } catch {
+        // fallback — assume it’s already a proper JSON object
+      }
     }
 
     // Convert rating/released to numbers
     if (updates.rating) updates.rating = Number(updates.rating);
+    if (updates.status) updates.status = updates.status;
+    if (updates.seasonNumber) updates.seasonNumber = updates.seasonNumber;
     if (updates.released) updates.released = Number(updates.released);
 
     const updated = await Movie.findByIdAndUpdate(movieID, updates, {
@@ -164,7 +179,7 @@ const editMovie = async (req, res) => {
 
     res.status(200).json({ updated, msg: "Edited Successfully" });
   } catch (error) {
-    console.log("editMovie error:", error);
+    console.error("editMovie error:", error);
     res.status(500).json({ msg: error.message });
   }
 };
