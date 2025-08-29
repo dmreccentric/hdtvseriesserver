@@ -3,7 +3,7 @@ const Movie = require("../model/Movie");
 // Get all movies (with optional filters)
 const getAllMovies = async (req, res) => {
   try {
-    const { genre, search, page = 1, limit = 20 } = req.query;
+    const { genre, search, page = 1, limit } = req.query;
 
     // Build query object
     let query = {};
