@@ -24,14 +24,10 @@ const SeasonSchema = new mongoose.Schema({
   episodes: [EpisodeSchema],
 });
 
-const MovieSchema = new mongoose.Schema(
+const NewMovieSchema = new mongoose.Schema(
   {
-    title: {
-      type: String,
-      required: [true, "please provide a title"],
-      unique: true,
-      index: true,
-    },
+    title: { type: String, required: [true, "please provide a title"] },
+    subtitle: { type: String },
     genres: {
       type: [String],
       enum: [
@@ -85,10 +81,10 @@ const MovieSchema = new mongoose.Schema(
     },
     plot: { type: String, required: [true, "plot must be provided"] },
     link: { type: String },
-    trailer: { type: String, default: "" },
+    trailer: { type: String },
     rating: { type: Number },
     img: { type: String },
-    himg: { type: String, default: "" },
+    himg: { type: String },
     released: { type: Number },
     language: {
       type: String,
@@ -102,7 +98,6 @@ const MovieSchema = new mongoose.Schema(
     status: {
       type: String,
       enum: ["Ongoing", "Completed"],
-      default: "Completed",
     },
     seasons: {
       type: [SeasonSchema],
@@ -120,4 +115,4 @@ const MovieSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-module.exports = mongoose.model("Movie", MovieSchema);
+module.exports = mongoose.model("NewMovie", NewMovieSchema);

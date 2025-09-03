@@ -11,6 +11,7 @@ const connectDB = require("./db/connectDB");
 const credentials = require("./middlewares/credentials");
 const corsOptions = require("./config/corOptions"); // fixed typo corOptions -> corsOptions
 const movieRoute = require("./routes/movie");
+const newMovieRoute = require("./routes/newMovie");
 const userRoute = require("./routes/user");
 const verifyRoute = require("./routes/verify");
 const authRoute = require("./routes/auth");
@@ -33,6 +34,7 @@ app.get("/ping", (req, res) => {
 
 // Routes
 app.use("/api/v1/movie", movieRoute);
+app.use("/api/v1/newmovie", newMovieRoute);
 app.use("/api/v1/user", userRoute);
 app.use("/api/v1/auth", refreshRoute);
 app.use("/api/v1/admin", editMovieRoute);
